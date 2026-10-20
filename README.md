@@ -1,6 +1,6 @@
 # Fake News Text Classifier
 
-An educational machine-learning prototype that classifies a news article's text as `REAL` or `FAKE` using a TF-IDF + Passive Aggressive classifier.
+An educational machine-learning prototype that classifies a news article's text as `REAL` or `FAKE` using a TF-IDF + SGDClassifier using a passive-aggressive learning schedule.
 
 **Important:** This is a text-classification demo, not a fact-checking service. It can learn misleading patterns from its training data and may be wrong about new or out-of-distribution articles. A predicted label is not evidence that a claim is true or false.
 
