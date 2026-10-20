@@ -51,7 +51,7 @@ def test_predict_returns_label_and_scope_note(monkeypatch):
 def test_load_articles_cleans_empty_rows_and_removes_duplicate_text(tmp_path):
     fake_path = tmp_path / "Fake.csv"
     real_path = tmp_path / "True.csv"
-    pd.DataFrame({"text": ["fake article alpha", "", None]}).to_csv(fake_path, index=False)
+    pd.DataFrame({"text": ["fake article alpha", "fake article delta", "", None]}).to_csv(fake_path, index=False)
     pd.DataFrame({"text": ["real article beta", "real article gamma"]}).to_csv(real_path, index=False)
 
     data = load_articles(fake_path, real_path)
