@@ -27,7 +27,14 @@ def load_articles(fake_csv: Path, real_csv: Path) -> pd.DataFrame:
 
     data = pd.concat([fake_rows, real_rows], ignore_index=True)
     data["text"] = data["text"].fillna("").astype(str).str.strip()
-    data = data.loc[data["text"].ne("")].drop_duplicates(subset=["text"]).reset_index(drop=True)
+    data = data.loc[data["text"].ne("")].copy()
+
+    # The same article must not silently be labeled both FAKE and REAL.
+    label_counts = data.groupby("text", sort=False)["label"].nunique()
+    ambiguous_texts = set(label_counts[label_counts > 1].index)
+    if ambiguous_texts:
+        data = data.loc[~data["text"].isin(ambiguous_texts)]
+    data = data.drop_duplicates(subset=["text"]).reset_index(drop=True)
 
     if data["label"].nunique() != 2:
         raise ValueError("Both REAL and FAKE examples are required.")
