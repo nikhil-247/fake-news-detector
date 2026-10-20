@@ -81,3 +81,16 @@ def test_training_pipeline_fits_and_predicts_distinct_text():
 
     assert len(predictions) == 2
     assert set(predictions).issubset({"REAL", "FAKE"})
+
+
+def test_load_articles_drops_text_with_conflicting_labels(tmp_path):
+    fake_path = tmp_path / "Fake.csv"
+    real_path = tmp_path / "True.csv"
+    pd.DataFrame({"text": ["shared article", "fake article alpha", "fake article beta"]}).to_csv(fake_path, index=False)
+    pd.DataFrame({"text": ["shared article", "real article alpha", "real article beta"]}).to_csv(real_path, index=False)
+
+    data = load_articles(fake_path, real_path)
+
+    assert "shared article" not in set(data["text"])
+    assert set(data["label"]) == {"FAKE", "REAL"}
+    assert data["text"].is_unique
