@@ -1,52 +1,71 @@
+import os
+
 import pyttsx3
-import speech_recognition as sr
-import datetime
 import requests
+import speech_recognition as sr
 
-# Replace with your OpenRouter API key
-openrouter_api_key = "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"
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-3.5-turbo")
 
-def speak(text):
+
+def speak(text: str) -> None:
     engine = pyttsx3.init()
-    engine.setProperty('rate', 180)
+    engine.setProperty("rate", 180)
     engine.say(text)
     engine.runAndWait()
 
-def get_openai_response(prompt):
-    try:
-        url = "https://openrouter.ai/api/v1/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {openrouter_api_key}",
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "model": "openai/gpt-3.5-turbo",  # or "mistralai/mixtral-8x7b", etc.
-            "messages": [
-                {"role": "user", "content": prompt}
-            ]
-        }
 
-        response = requests.post(url, headers=headers, json=payload)
+def get_openai_response(prompt: str) -> str:
+    """Call OpenRouter without embedding a credential in source code."""
+    if not OPENROUTER_API_KEY:
+        return "The assistant is not configured. Set the OPENROUTER_API_KEY environment variable."
+
+    try:
+        response = requests.post(
+            OPENROUTER_URL,
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": OPENROUTER_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+            },
+            timeout=30,
+        )
         response.raise_for_status()
         data = response.json()
-        return data['choices'][0]['message']['content']
+        return data["choices"][0]["message"]["content"].strip()
+    except requests.RequestException:
+        return "Sorry, the AI service is temporarily unavailable. Please try again."
+    except (KeyError, IndexError, TypeError, ValueError):
+        return "Sorry, the AI service returned an unexpected response."
 
-    except Exception as e:
-        print("API Error:", e)
-        return "Sorry, I couldn't get a response."
 
-def run_voice_assistant():
+def run_voice_assistant() -> str | None:
     recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
-        print("Listening...")
-        recognizer.adjust_for_ambient_noise(source)
-        audio = recognizer.listen(source, timeout=5)
-
     try:
+        with sr.Microphone() as source:
+            print("Listening...")
+            recognizer.adjust_for_ambient_noise(source, duration=0.5)
+            audio = recognizer.listen(source, timeout=5, phrase_time_limit=20)
+
         query = recognizer.recognize_google(audio)
         print(f"You said: {query}")
         response = get_openai_response(query)
         speak(response)
         return response
-    except Exception as e:
-        print("Recognition Error:", e)
+    except sr.WaitTimeoutError:
+        print("No speech was detected before the timeout.")
+    except sr.UnknownValueError:
+        print("Speech could not be understood.")
+    except sr.RequestError:
+        print("The speech-recognition service is unavailable.")
+    except OSError:
+        print("A microphone or audio device could not be opened.")
+    return None
+
+
+if __name__ == "__main__":
+    run_voice_assistant()
