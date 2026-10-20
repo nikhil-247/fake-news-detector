@@ -40,7 +40,7 @@ def build_pipeline() -> Pipeline:
     return Pipeline(
         steps=[
             ("tfidf", TfidfVectorizer(stop_words="english", ngram_range=(1, 2), max_df=0.95)),
-            ("classifier", SGDClassifier(\n                loss="hinge",\n                penalty=None,\n                learning_rate="pa1",\n                eta0=1.0,\n                max_iter=1000,\n                tol=1e-3,\n                random_state=42,\n            )),
+            (,                "classifier",,                SGDClassifier(,                    loss="hinge",,                    penalty=None,,                    learning_rate="pa1",,                    eta0=1.0,,                    max_iter=1000,,                    tol=1e-3,,                    random_state=42,,                ),,            ),
         ]
     )
 
