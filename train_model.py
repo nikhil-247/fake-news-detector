@@ -6,7 +6,7 @@ from pathlib import Path
 import joblib
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import PassiveAggressiveClassifier
+from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
@@ -40,7 +40,7 @@ def build_pipeline() -> Pipeline:
     return Pipeline(
         steps=[
             ("tfidf", TfidfVectorizer(stop_words="english", ngram_range=(1, 2), max_df=0.95)),
-            ("classifier", PassiveAggressiveClassifier(max_iter=1000, random_state=42)),
+            ("classifier", SGDClassifier(\n                loss="hinge",\n                penalty=None,\n                learning_rate="pa1",\n                eta0=1.0,\n                max_iter=1000,\n                tol=1e-3,\n                random_state=42,\n            )),
         ]
     )
 
