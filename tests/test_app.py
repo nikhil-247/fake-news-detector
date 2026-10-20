@@ -1,6 +1,9 @@
-from types import SimpleNamespace
+from __future__ import annotations
+
+import pandas as pd
 
 import app as app_module
+from train_model import build_pipeline, load_articles
 
 
 def test_health_is_unavailable_when_model_is_missing(monkeypatch):
@@ -43,3 +46,37 @@ def test_predict_returns_label_and_scope_note(monkeypatch):
     assert response.status_code == 200
     assert response.get_json()["label"] == "REAL"
     assert "independently verify" in response.get_json()["note"]
+
+
+def test_load_articles_cleans_empty_rows_and_removes_duplicate_text(tmp_path):
+    fake_path = tmp_path / "Fake.csv"
+    real_path = tmp_path / "True.csv"
+    pd.DataFrame({"text": ["fake article alpha", "", None]}).to_csv(fake_path, index=False)
+    pd.DataFrame({"text": ["real article beta", "real article gamma"]}).to_csv(real_path, index=False)
+
+    data = load_articles(fake_path, real_path)
+
+    assert len(data) == 3
+    assert set(data["label"]) == {"FAKE", "REAL"}
+    assert not data["text"].str.strip().eq("").any()
+
+
+def test_training_pipeline_fits_and_predicts_distinct_text():
+    pipeline = build_pipeline()
+    texts = [
+        "sports team wins championship match",
+        "football players score winning goal",
+        "coach discusses league season",
+        "match result announced after tournament",
+        "central bank adjusts monetary policy",
+        "government publishes economic statistics",
+        "finance ministry reports budget figures",
+        "official data shows inflation trend",
+    ]
+    labels = ["REAL", "REAL", "REAL", "REAL", "FAKE", "FAKE", "FAKE", "FAKE"]
+
+    pipeline.fit(texts, labels)
+    predictions = pipeline.predict(["sports team wins match", "central bank publishes inflation data"])
+
+    assert len(predictions) == 2
+    assert set(predictions).issubset({"REAL", "FAKE"})
